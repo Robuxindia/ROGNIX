@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROGNIX - Topluluk Oyunları</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="roblox_favicon.png">
+</head>
+<body>
+    <div class="sidebar-credit">2013erikcassel.netlify.app V2 by Mavi Kedi</div>
+    <div id="wrapper">
+        <header id="header">
+            <div class="header-left">
+                <a href="index.html" class="logo-link"><img src="Rognix.png" alt="ROGNIX" class="ROGNIX-logo"></a>
+            </div>
+            <div class="header-middle"> 
+                <input type="text" placeholder="Ara" class="search-input">
+                <button class="search-button">Ara</button>
+            </div>
+            <div class="header-right" id="auth-section">
+                <button onclick="showAuthModal()" class="search-button">Giriş Yap / Kayıt Ol</button>
+            </div>
+        </header>
+
+        <nav id="main-nav">
+            <ul>
+                <li><a href="index.html">Anasayfa</a></li>
+                <li><a href="profile.html">Profil</a></li>
+                <li><a href="games.html">Oyunlarım</a></li>
+                <li><a href="community_games.html" class="active">Topluluk Oyunları</a></li>
+                <li><a href="avatar.html">Avatar'ım</a></li>
+                <li><a href="catalog.html">Mağaza</a></li>
+                <li><a href="trade.html">Takas</a></li>
+                <li><a href="develop.html">Geliştir</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="profile-block" style="width:100%;">
+                <h2>Topluluk Tarafından Yapılan Oyunlar</h2>
+                <div id="community-games-grid" class="game-grid">
+                    Yükleniyor...
+                </div>
+            </div>
+        </div>
+
+        <footer id="footer">
+            <p>&copy; 2013 ROGNIX Corporation.</p>
+        </footer>
+    </div>
+    
+    <div class="right-banner-container">
+        <div class="sponsor-title">Sponsorlarımız</div>
+        <a href="https://duzcesigorta.net" target="_blank" class="right-banner"><img src="duzce-sigorta.png"></a>
+        <a href="https://sigortaduzce.com" target="_blank" class="right-banner"><img src="sigortaduzce.png"></a>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        async function loadCommunityGames() {
+            try {
+                const res = await fetch('/api/community-games');
+                const games = await res.json();
+                const grid = document.getElementById('community-games-grid');
+                grid.innerHTML = '';
+
+                if (games.length === 0) {
+                    grid.innerHTML = '<p style="color:#999;">Henüz yayınlanmış bir topluluk oyunu yok.</p>';
+                    return;
+                }
+
+                games.forEach(game => {
+                    const el = document.createElement('div');
+                    el.className = 'game-item';
+                    el.innerHTML = `
+                        <img src="${game.image || 'game_icon_base.png'}" class="game-icon">
+                        <h4>${game.name}</h4>
+                        <p style="font-size:11px; color:#666;">Yapımcı: ${game.creator}</p>
+                        <button class="play-button" onclick="playCommunityGame('${game.id}')">Oyna</button>
+                    `;
+                    grid.appendChild(el);
+                });
+            } catch (e) {
+                console.error(e);
+                document.getElementById('community-games-grid').innerHTML = 'Yükleme hatası.';
+            }
+        }
+
+        function playCommunityGame(gameId) {
+            location.href = `play.html?id=${gameId}`;
+        }
+
+        window.addEventListener('load', loadCommunityGames);
+    </script>
+</body>
+</html>

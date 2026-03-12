@@ -1,0 +1,124 @@
+{
+  "users": [
+    {
+      "username": "mavikediyt",
+      "password": "naber1321",
+      "tix": 10000,
+      "robux": 10000,
+      "friends": [],
+      "bio": "ROGNIX Kurucusu ve Admin",
+      "created_at": "2026-03-10T18:13:11.774Z",
+      "inventory": [
+        "shirt_blue",
+        "pants_jean",
+        "hat_tophat",
+        "shirt_red",
+        "hat_gold",
+        "face_check",
+        "face_muhahaha",
+        "face_sad",
+        "face_silly"
+      ],
+      "avatar": {
+        "shirt": "shirt_blue",
+        "pants": "pants_jean",
+        "hat": "hat_tophat",
+        "face": "face_muhahaha",
+        "color": "#ffcc00"
+      },
+      "notifications": [
+        {
+          "id": 1,
+          "text": "Mağaza artık aktif!",
+          "date": "2026-03-11"
+        }
+      ]
+    },
+    {
+      "username": "guest666",
+      "password": "naber1321",
+      "tix": 50,
+      "robux": 10,
+      "inventory": [],
+      "avatar": {
+        "shirt": null,
+        "pants": null,
+        "hat": null,
+        "face": null,
+        "color": "#ff0000"
+      },
+      "friends": [],
+      "bio": "Hoş geldiniz!"
+    }
+  ],
+  "catalog": [
+    {
+      "id": "shirt_blue",
+      "name": "Mavi Gömlek",
+      "type": "shirt",
+      "price": 50,
+      "image": "noob.png",
+      "color": "#0000ff"
+    },
+    {
+      "id": "shirt_red",
+      "name": "Kırmızı Ceket",
+      "type": "shirt",
+      "price": 120,
+      "image": "noob.png",
+      "color": "#ff0000"
+    },
+    {
+      "id": "pants_jean",
+      "name": "Kot Pantolon",
+      "type": "pants",
+      "price": 50,
+      "image": "noob.png",
+      "color": "#000088"
+    },
+    {
+      "id": "hat_tophat",
+      "name": "Sihirbaz Şapkası",
+      "type": "hat",
+      "price": 150,
+      "image": "noob.png",
+      "color": "#111111"
+    },
+    {
+      "id": "hat_gold",
+      "name": "Altın Taç",
+      "type": "hat",
+      "price": 500,
+      "image": "noob.png",
+      "color": "#ffd700"
+    },
+    {
+      "id": "face_check",
+      "name": "Check Face",
+      "type": "face",
+      "price": 60,
+      "image": "faces/check-face.png"
+    },
+    {
+      "id": "face_muhahaha",
+      "name": "Muhahaha Face",
+      "type": "face",
+      "price": 80,
+      "image": "faces/muhahaha-face.png"
+    },
+    {
+      "id": "face_sad",
+      "name": "Sad Face",
+      "type": "face",
+      "price": 50,
+      "image": "faces/sad-face.png"
+    },
+    {
+      "id": "face_silly",
+      "name": "Silly Face",
+      "type": "face",
+      "price": 70,
+      "image": "faces/silly-face.png"
+    }
+  ]
+}

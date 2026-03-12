@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROGNIX - Geliştir</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="wrapper">
+        <header id="header">
+            <div class="header-left">
+                <a href="index.html" class="logo-link"><img src="Rognix.png" alt="ROGNIX" class="ROGNIX-logo"></a>
+            </div>
+            <div class="header-right" id="auth-section"></div>
+        </header>
+
+        <nav id="main-nav">
+            <ul>
+                <li><a href="index.html">Anasayfa</a></li>
+                <li><a href="profile.html">Profil</a></li>
+                <li><a href="games.html">Oyunlarım</a></li>
+                <li><a href="community_games.html">Topluluk Oyunları</a></li>
+                <li><a href="avatar.html">Avatar'ım</a></li>
+                <li><a href="catalog.html">Mağaza</a></li>
+                <li><a href="develop.html" class="active">Geliştir</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="profile-block" style="width:100%;">
+                <h2>Geliştirici Merkezi</h2>
+                
+                <div id="admin-panel" style="display:none; background:#e7f3ff; border:1px solid #0084c7; padding:15px; border-radius:8px; margin-bottom:20px;">
+                    <h3 style="margin-top:0;">Yönetici Paneli</h3>
+                    <button class="play-button" onclick="location.href='studio.html'" style="width:auto;">ROGNIX Studio'yu Başlat</button>
+                    <button class="play-button" onclick="viewApplications()" style="width:auto; background:orange;">Başvuruları İncele</button>
+                </div>
+
+                <div id="apply-section">
+                    <h3>ROGNIX Studio Erişimi</h3>
+                    <p>Kendi oyunlarını yapmak için Studio'ya erişim başvurusu yapmalısın.</p>
+                    <textarea id="apply-reason" placeholder="Neden oyun yapmak istiyorsun?" style="width:100%; height:80px; padding:10px;"></textarea><br><br>
+                    <button class="play-button" onclick="submitApplication()" style="width:auto;">Başvuruyu Gönder</button>
+                </div>
+                
+                <div style="margin-top:30px; border-top:1px solid #eee; padding-top:20px;">
+                    <h3>Eşya Oluştur (250 Robux)</h3>
+                    <input type="text" id="item-name" placeholder="Eşya Adı" style="padding:8px;">
+                    <select id="item-type"><option value="shirt">Gömlek</option><option value="pants">Pantolon</option><option value="hat">Şapka</option></select>
+                    <input type="color" id="item-color" value="#ffffff">
+                    <button class="play-button" onclick="createItem()" style="width:auto;">Yayınla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if(user && user.username === 'mavikediyt') {
+            document.getElementById('admin-panel').style.display = 'block';
+            document.getElementById('apply-section').style.display = 'none';
+        }
+
+        async function submitApplication() {
+            const reason = document.getElementById('apply-reason').value;
+            if(!reason) return alert("Lütfen nedenini belirtin.");
+            const res = await fetch('/api/apply-dev', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: user.username, reason })
+            });
+            if((await res.json()).success) alert("Başvurunuz alındı!");
+        }
+
+        async function createItem() {
+            const name = document.getElementById('item-name').value;
+            const type = document.getElementById('item-type').value;
+            const color = document.getElementById('item-color').value;
+            const res = await fetch('/api/create-item', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: user.username, name, type, price: 50, color })
+            });
+            const data = await res.json();
+            if(data.success) alert("Eşya başarıyla yayınlandı!");
+            else alert(data.message);
+        }
+    </script>
+</body>
+</html>

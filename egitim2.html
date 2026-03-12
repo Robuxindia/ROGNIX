@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROGNIX - Maden Alanı</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', cursive; user-select: none; -webkit-tap-highlight-color: transparent; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.7); padding: 10px; border-radius: 10px; pointer-events: none; border: 2px solid #86b92a; font-size: 12px; }
+        #stats { position: absolute; top: 10px; right: 100px; color: white; background: rgba(0,0,0,0.7); padding: 8px; border-radius: 5px; font-weight: bold; }
+        #back-btn { position: absolute; top: 10px; right: 10px; padding: 10px 15px; background: #d9534f; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; touch-action: none; z-index: 100; cursor: move; }
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; }
+        #jump-btn { position: absolute; bottom: 40px; right: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border: 5px solid white; border-radius: 50%; color: white; font-weight: bold; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; }
+    </style>
+</head>
+<body>
+    <div id="ui"><h3 style="margin:0; color:#86b92a;">ROGNIX MADEN</h3><p>Bakış: Sağ Tık Sürükle</p></div>
+    <div id="stats">Tix: <span id="t-count" style="color:yellow">0</span> | R$: <span id="r-count" style="color:#00A300">0</span></div>
+    <button id="back-btn" onclick="location.href='index.html'">Çıkış</button>
+    <div id="joystick-container"><div id="joystick-knob"></div></div>
+    <div id="jump-btn" onmousedown="triggerJump()" ontouchstart="triggerJump()">ZIPLA</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) location.href = 'index.html';
+
+        let sessionTix = 0, sessionRobux = 0;
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x222222);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshPhongMaterial({ color: 0x444444 }));
+        ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(50, 100, 50); sun.castShadow = true; scene.add(sun);
+
+        const noobTex = new THREE.TextureLoader().load('noob.png');
+        const playerGroup = new THREE.Group();
+        const playerMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshPhongMaterial({ map: noobTex }));
+        playerMesh.castShadow = true; playerMesh.position.y = 1; playerGroup.add(playerMesh); scene.add(playerGroup);
+
+        let vy = 0, isGrounded = true, cameraRotation = 0, cameraPitch = 0.6, keys = {}, joystick = { x: 0, y: 0, active: false };
+        const knob = document.getElementById('joystick-knob'), container = document.getElementById('joystick-container');
+
+        function handleJoystick(e) {
+            if (e.cancelable) e.preventDefault();
+            const input = (e.touches && e.touches[0]) || e;
+            const rect = container.getBoundingClientRect();
+            const dx = input.clientX - (rect.left + rect.width / 2);
+            const dy = input.clientY - (rect.top + rect.height / 2);
+            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
+            const angle = Math.atan2(dy, dx);
+            const lx = Math.cos(angle) * dist, ly = Math.sin(angle) * dist;
+            knob.style.transform = `translate(${lx}px, ${ly}px)`;
+            joystick.x = lx / 45; joystick.y = ly / 45;
+        }
+        container.addEventListener('mousedown', e => { if(e.button===0) { joystick.active=true; handleJoystick(e); } });
+        container.addEventListener('touchstart', e => { joystick.active=true; handleJoystick(e); });
+        window.addEventListener('mousemove', e => { if(joystick.active) handleJoystick(e); });
+        window.addEventListener('touchmove', e => { if(joystick.active) handleJoystick(e); }, {passive:false});
+        const stopJ = () => { joystick.active=false; joystick.x=0; joystick.y=0; knob.style.transform='translate(0,0)'; };
+        window.addEventListener('mouseup', stopJ); window.addEventListener('touchend', stopJ);
+
+        function triggerJump() { if(isGrounded) { vy = 0.45; isGrounded = false; } }
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.code==='Space') triggerJump(); });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+        
+        let isRM = false; window.addEventListener('mousedown', e => { if(e.button===2) isRM=true; }); window.addEventListener('mouseup', e => { if(e.button===2) isRM=false; });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+        window.addEventListener('mousemove', e => { if(isRM) { cameraRotation -= e.movementX*0.01; cameraPitch = Math.max(0.2, Math.min(1.4, cameraPitch+e.movementY*0.01)); } });
+
+        const coins = [];
+        function spawnCoin() {
+            const isR = Math.random() > 0.85;
+            const c = new THREE.Mesh(new THREE.BoxGeometry(0.7,0.7,0.7), new THREE.MeshPhongMaterial({color: isR ? 0x00FF00 : 0xFFFF00}));
+            c.position.set(Math.random()*100-50, 0.5, Math.random()*100-50); c.castShadow=true; c.isRobux=isR; scene.add(c); coins.push(c);
+        }
+        for(let i=0; i<30; i++) spawnCoin();
+
+        async function save(t, r) {
+            await fetch('/api/add-currency', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: user.username, tixAmount: t, robuxAmount: r }) });
+            user.tix += t; user.robux += r; localStorage.setItem('user', JSON.stringify(user));
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let moveX = 0, moveZ = 0;
+            if(keys['w']) { moveX -= Math.sin(cameraRotation); moveZ -= Math.cos(cameraRotation); }
+            if(keys['s']) { moveX += Math.sin(cameraRotation); moveZ += Math.cos(cameraRotation); }
+            if(keys['a']) { moveX -= Math.cos(cameraRotation); moveZ += Math.sin(cameraRotation); }
+            if(keys['d']) { moveX += Math.cos(cameraRotation); moveZ -= Math.sin(cameraRotation); }
+            if(joystick.active) {
+                const jx = joystick.x, jy = joystick.y;
+                moveX = jx * Math.cos(cameraRotation) + jy * Math.sin(cameraRotation);
+                moveZ = -jx * Math.sin(cameraRotation) + jy * Math.cos(cameraRotation);
+            }
+            if(moveX || moveZ) { playerGroup.rotation.y = Math.atan2(moveX, moveZ); playerGroup.position.x += moveX * 0.25; playerGroup.position.z += moveZ * 0.25; }
+            vy -= 0.015; playerGroup.position.y += vy;
+            if(playerGroup.position.y <= 0) { playerGroup.position.y=0; vy=0; isGrounded=true; }
+            camera.position.x = playerGroup.position.x + Math.sin(cameraRotation)*20*Math.cos(cameraPitch);
+            camera.position.z = playerGroup.position.z + Math.cos(cameraRotation)*20*Math.cos(cameraPitch);
+            camera.position.y = playerGroup.position.y + 20*Math.sin(cameraPitch) + 2;
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
+            coins.forEach((c, i) => {
+                c.rotation.y += 0.05;
+                if(playerGroup.position.distanceTo(c.position) < 1.8) {
+                    scene.remove(c); coins.splice(i,1);
+                    if(c.isRobux) { sessionRobux++; save(0,1); } else { sessionTix++; save(1,0); }
+                    document.getElementById('t-count').innerText = sessionTix; document.getElementById('r-count').innerText = sessionRobux; spawnCoin();
+                }
+            });
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

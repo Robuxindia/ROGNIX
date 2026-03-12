@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROGNIX - Zorlu Obby</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', cursive; user-select: none; -webkit-tap-highlight-color: transparent; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; pointer-events: none; border: 2px solid #0084c7; font-size: 12px; z-index: 50; }
+        #status { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 16px; font-weight: bold; text-shadow: 2px 2px black; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; text-align: center; width: 60%; z-index: 50; }
+        #back-btn { position: absolute; top: 10px; right: 10px; padding: 10px 15px; background: #d9534f; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 100; }
+        
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; touch-action: none; z-index: 100; cursor: move; }
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; }
+        
+        #jump-btn { position: absolute; bottom: 40px; right: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border: 5px solid white; border-radius: 50%; color: white; font-weight: bold; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+        #jump-btn:active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h3 style="margin:0;">ZORLU OBBY</h3>
+        <p>Hareket: WASD veya Joystick</p>
+        <p>Bakış: Sağ Tık Sürükle</p>
+    </div>
+    <div id="status">Zıpla ve bitişe ulaş!</div>
+    <button id="back-btn" onclick="location.href='games.html'">Geri Dön</button>
+    
+    <div id="joystick-container"><div id="joystick-knob"></div></div>
+    <div id="jump-btn" onmousedown="triggerJump()" ontouchstart="triggerJump()">ZIPLA</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="avatar_loader.js"></script>
+    <script>
+        const localUser = JSON.parse(localStorage.getItem('user'));
+        if (!localUser) location.href = 'index.html';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        const groundGeo = new THREE.PlaneGeometry(500, 500);
+        const groundMat = new THREE.MeshPhongMaterial({ color: 0x228B22 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        scene.add(sun);
+
+        const platforms = [];
+        for(let i=0; i<15; i++) {
+            const platform = new THREE.Mesh(new THREE.BoxGeometry(10, 1, 10), new THREE.MeshPhongMaterial({color: 0xff0000}));
+            platform.position.set(0, 1.5 + i*3, -i*15 - 20);
+            platform.castShadow = true;
+            platform.receiveShadow = true;
+            scene.add(platform);
+            platforms.push(platform);
+        }
+
+        const playerGroup = new THREE.Group();
+        scene.add(playerGroup);
+        playerGroup.position.set(0, 5, 0);
+
+        let parts = {};
+        async function initAvatar() {
+            parts = await loadPlayerAvatar(scene, playerGroup);
+        }
+        initAvatar();
+
+        let vy = 0, isGrounded = false, cameraRotation = 0, cameraPitch = 0.5, keys = {};
+        let joystick = { x: 0, y: 0, active: false };
+        let animTime = 0;
+
+        const knob = document.getElementById('joystick-knob');
+        const container = document.getElementById('joystick-container');
+        function handleJoystick(e) {
+            if (e.cancelable) e.preventDefault();
+            const input = (e.touches && e.touches[0]) || e;
+            const rect = container.getBoundingClientRect();
+            const dx = input.clientX - (rect.left + rect.width / 2);
+            const dy = input.clientY - (rect.top + rect.height / 2);
+            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
+            const angle = Math.atan2(dy, dx);
+            const lx = Math.cos(angle) * dist, ly = Math.sin(angle) * dist;
+            knob.style.transform = `translate(${lx}px, ${ly}px)`;
+            joystick.x = lx / 45; joystick.y = ly / 45;
+        }
+        container.addEventListener('mousedown', e => { if(e.button===0) { joystick.active=true; handleJoystick(e); } });
+        container.addEventListener('touchstart', e => { joystick.active=true; handleJoystick(e); });
+        window.addEventListener('mousemove', e => { if(joystick.active) handleJoystick(e); });
+        window.addEventListener('touchmove', e => { if(joystick.active) handleJoystick(e); }, {passive:false});
+        const stopJoystick = () => { joystick.active=false; joystick.x=0; joystick.y=0; knob.style.transform='translate(0,0)'; };
+        window.addEventListener('mouseup', stopJoystick); window.addEventListener('touchend', stopJoystick);
+
+        function triggerJump() { if(isGrounded) { vy = 0.4; isGrounded = false; } }
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.code==='Space') triggerJump(); });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        let isRightMouseDown = false;
+        window.addEventListener('mousedown', e => { if(e.button===2) isRightMouseDown=true; });
+        window.addEventListener('mouseup', e => { if(e.button===2) isRightMouseDown=false; });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+        window.addEventListener('mousemove', e => { if(isRightMouseDown) { cameraRotation -= e.movementX*0.01; cameraPitch = Math.max(0.1, Math.min(1.4, cameraPitch+e.movementY*0.01)); } });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let moveX = 0, moveZ = 0;
+            if(keys['w']) { moveX -= Math.sin(cameraRotation); moveZ -= Math.cos(cameraRotation); }
+            if(keys['s']) { moveX += Math.sin(cameraRotation); moveZ += Math.cos(cameraRotation); }
+            if(keys['a']) { moveX -= Math.cos(cameraRotation); moveZ += Math.sin(cameraRotation); }
+            if(keys['d']) { moveX += Math.cos(cameraRotation); moveZ -= Math.sin(cameraRotation); }
+            
+            if(joystick.active) {
+                const jx = joystick.x, jy = joystick.y;
+                moveX = jx * Math.cos(cameraRotation) + jy * Math.sin(cameraRotation);
+                moveZ = -jx * Math.sin(cameraRotation) + jy * Math.cos(cameraRotation);
+            }
+
+            const isMoving = (moveX !== 0 || moveZ !== 0);
+            if(isMoving) {
+                playerGroup.rotation.y = Math.atan2(moveX, moveZ);
+                playerGroup.position.x += moveX * 0.3;
+                playerGroup.position.z += moveZ * 0.3;
+                animTime += 0.15;
+            }
+
+            // Gravity
+            vy -= 0.015;
+            playerGroup.position.y += vy;
+
+            // Ground Collision
+            let onSurface = false;
+            if (playerGroup.position.y <= 0 && Math.abs(playerGroup.position.x) < 250 && Math.abs(playerGroup.position.z) < 250) {
+                playerGroup.position.y = 0; vy = 0; isGrounded = true; onSurface = true;
+            }
+
+            // Platform Collision
+            platforms.forEach(p => {
+                if (Math.abs(playerGroup.position.x - p.position.x) < 5 && Math.abs(playerGroup.position.z - p.position.z) < 5) {
+                    const topY = p.position.y + 0.5;
+                    if (playerGroup.position.y <= topY && playerGroup.position.y > topY - 1 && vy <= 0) {
+                        playerGroup.position.y = topY; vy = 0; isGrounded = true; onSurface = true;
+                    }
+                }
+            });
+
+            if (!onSurface) isGrounded = false;
+
+            // Animations
+            if (parts.leftLeg) {
+                if (!isGrounded) {
+                    parts.leftLeg.rotation.x = -0.5; parts.rightLeg.rotation.x = -0.5;
+                    parts.leftArm.rotation.x = 0.5; parts.rightArm.rotation.x = 0.5;
+                } else if (isMoving) {
+                    const speed = 1.5;
+                    parts.leftLeg.rotation.x = Math.sin(animTime * speed) * 0.8;
+                    parts.rightLeg.rotation.x = -Math.sin(animTime * speed) * 0.8;
+                    parts.leftArm.rotation.x = -Math.sin(animTime * speed) * 0.8;
+                    parts.rightArm.rotation.x = Math.sin(animTime * speed) * 0.8;
+                } else {
+                    parts.leftLeg.rotation.x = 0; parts.rightLeg.rotation.x = 0;
+                    parts.leftArm.rotation.x = 0; parts.rightArm.rotation.x = 0;
+                }
+            }
+
+            if (playerGroup.position.y < -30) { playerGroup.position.set(0, 10, 0); vy = 0; }
+
+            camera.position.x = playerGroup.position.x + Math.sin(cameraRotation)*25*Math.cos(cameraPitch);
+            camera.position.z = playerGroup.position.z + Math.cos(cameraRotation)*25*Math.cos(cameraPitch);
+            camera.position.y = playerGroup.position.y + 25*Math.sin(cameraPitch) + 6;
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

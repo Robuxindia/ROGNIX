@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROGNIX - Anasayfa</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="roblox_favicon.png">
+</head>
+<body>
+    <div class="sidebar-credit">2013erikcassel.netlify.app V2 by Mavi Kedi</div>
+    <div id="wrapper">
+        <header id="header">
+            <div class="header-left">
+                <a href="index.html" class="logo-link"><img src="Rognix.png" alt="ROGNIX" class="ROGNIX-logo"></a>
+            </div>
+            <div class="header-middle"> 
+                <input type="text" placeholder="Ara" class="search-input">
+                <button class="search-button">Ara</button>
+            </div>
+            <div class="header-right" id="auth-section">
+                <button onclick="showAuthModal()" class="search-button">Giriş Yap / Kayıt Ol</button>
+            </div>
+        </header>
+
+        <nav id="main-nav">
+            <ul>
+                <li><a href="index.html" class="active">Anasayfa</a></li>
+                <li><a href="profile.html">Profil</a></li>
+                <li><a href="games.html">Oyunlarım</a></li>
+                <li><a href="community_games.html">Topluluk Oyunları</a></li>
+                <li><a href="avatar.html">Avatar'ım</a></li>
+                <li><a href="catalog.html">Mağaza</a></li>
+                <li><a href="trade.html">Takas</a></li>
+                <li><a href="develop.html">Geliştir</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div id="profile-left">
+                <div class="profile-block user-info-block">
+                    <h2 id="home-username">Ziyaretçi</h2>
+                    <img src="nasdgkasgkm.png" alt="Avatar" class="profile-avatar">
+                </div>
+                
+                <div class="profile-block friends-block" style="margin-top:12px;">
+                    <h3>Arkadaşlarım</h3>
+                    <div class="friend-list">
+                        <p style="color:#999; font-size:12px;">Yükleniyor...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="profile-right">
+                <div class="profile-block">
+                    <h2>Eğitim Oyunları</h2>
+                    <div class="game-grid">
+                        <div class="game-item">
+                            <img src="game_icon_obby.png" class="game-icon">
+                            <h4>Bölüm 1: Eğitim</h4>
+                            <p>Temel kontrolleri öğren.</p>
+                            <button class="play-button" onclick="checkPlay('egitim1.html')">Oyna</button>
+                        </div>
+                        <div class="game-item">
+                            <img src="game_icon_tycoon.png" class="game-icon">
+                            <h4>Bölüm 2: Maden</h4>
+                            <p>Tix ve Robux topla.</p>
+                            <button class="play-button" onclick="checkPlay('egitim2.html')">Oyna</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-block" style="margin-top:12px;">
+                    <h2>Popüler Oyunlar</h2>
+                    <div class="game-grid">
+                        <div class="game-item">
+                            <img src="game_icon_base.png" class="game-icon">
+                            <h4>Baseplate Savaşı</h4>
+                            <button class="play-button" onclick="checkPlay('baseplate.html')">Oyna</button>
+                        </div>
+                        <div class="game-item">
+                            <img src="game_icon_citysim.png" class="game-icon">
+                            <h4>Şehir Hayatı</h4>
+                            <button class="play-button" onclick="checkPlay('sehir_hayati.html')">Oyna</button>
+                        </div>
+                        <div class="game-item">
+                            <img src="game_icon_farmingsim.png" class="game-icon">
+                            <h4>Çiftlik Simülatörü</h4>
+                            <button class="play-button" onclick="checkPlay('ciftlik_simulatoru.html')">Oyna</button>
+                        </div>
+                        <div class="game-item">
+                            <img src="game_icon_squid_game.png" class="game-icon">
+                            <h4>Hayatta Kalma</h4>
+                            <button class="play-button" onclick="checkPlay('hayatta_kalma.html')">Oyna</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer id="footer">
+            <p>&copy; 2013 ROGNIX Corporation.</p>
+        </footer>
+    </div>
+    <div class="right-banner-container">
+        <div class="sponsor-title">Sponsorlarımız</div>
+        <a href="https://duzcesigorta.net" target="_blank" class="right-banner">
+            <img src="duzce-sigorta.png" alt="Düzce Sigorta">
+        </a>
+        <a href="https://sigortaduzce.com" target="_blank" class="right-banner">
+            <img src="sigortaduzce.png" alt="Sigorta Düzce">
+        </a>
+    </div>
+    <script src="auth.js"></script>
+</body>
+</html>

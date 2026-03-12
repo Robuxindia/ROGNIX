@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROGNIX - Avatar'ım</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="roblox_favicon.png">
+    <style>
+        #avatar-container { display: flex; gap: 20px; padding: 20px; }
+        #avatar-preview { width: 400px; height: 500px; border: 1px solid #ccc; background: #eee; border-radius: 10px; }
+        #inventory-list { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 15px; align-content: start; }
+        .inv-item { border: 1px solid #ddd; padding: 10px; text-align: center; cursor: pointer; background: #fff; border-radius: 8px; transition: 0.2s; }
+        .inv-item:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .inv-item.equipped { border: 3px solid #0084c7; background: #e7f3ff; }
+        .inv-item img { width: 70px; height: 70px; object-fit: contain; }
+        .inv-item p { font-size: 12px; margin-top: 5px; font-weight: bold; }
+        .color-opt { width: 35px; height: 35px; display: inline-block; margin: 4px; cursor: pointer; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <div class="sidebar-credit">2013erikcassel.netlify.app V2 by Mavi Kedi</div>
+    <div id="wrapper">
+        <header id="header">
+            <div class="header-left">
+                <a href="index.html" class="logo-link"><img src="Rognix.png" alt="ROGNIX" class="ROGNIX-logo"></a>
+            </div>
+            <div class="header-right" id="auth-section"></div>
+        </header>
+
+        <nav id="main-nav">
+            <ul>
+                <li><a href="index.html">Anasayfa</a></li>
+                <li><a href="profile.html">Profil</a></li>
+                <li><a href="games.html">Oyunlarım</a></li>
+                <li><a href="community_games.html">Topluluk Oyunları</a></li>
+                <li><a href="avatar.html" class="active">Avatar'ım</a></li>
+                <li><a href="catalog.html">Mağaza</a></li>
+                <li><a href="trade.html">Takas</a></li>
+                <li><a href="develop.html">Geliştir</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="profile-block" style="width:100%;">
+                <h2>Avatar Düzenleyici</h2>
+                <div id="avatar-container">
+                    <div>
+                        <div id="avatar-preview"></div>
+                        <div style="margin-top:20px;">
+                            <h4>Ten Rengi</h4>
+                            <div id="skin-colors"></div>
+                        </div>
+                    </div>
+                    <div style="flex:1;">
+                        <h3>Envanterim</h3>
+                        <div id="inventory-list">Eşyalarınız yükleniyor...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="auth.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf5f5f5);
+        const camera = new THREE.PerspectiveCamera(50, 400/500, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(400, 500);
+        document.getElementById('avatar-preview').appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+        const light = new THREE.DirectionalLight(0xffffff, 0.4); light.position.set(5, 10, 7); scene.add(light);
+
+        const parts = {};
+        const createPart = (w, h, d, x, y, z, name) => {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshPhongMaterial({ color: 0xffcc00 });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            parts[name] = mesh;
+        };
+
+        createPart(2, 2, 2, 0, 3, 0, 'head');
+        createPart(4, 4, 2, 0, 0, 0, 'torso');
+        createPart(2, 4, 2, -3, 0, 0, 'leftArm');
+        createPart(2, 4, 2, 3, 0, 0, 'rightArm');
+        createPart(2, 4, 2, -1, -4, 0, 'leftLeg');
+        createPart(2, 4, 2, 1, -4, 0, 'rightLeg');
+
+        let hatMesh = null;
+        let faceMesh = null;
+        camera.position.set(0, 0, 15); camera.lookAt(0, 0, 0);
+
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        animate();
+
+        let user = null;
+        let catalog = [];
+        let equipped = { shirt: null, pants: null, hat: null, face: null, color: '#ffcc00' };
+
+        async function init() {
+            try {
+                const localUserStr = localStorage.getItem('user');
+                if(!localUserStr) return location.href='index.html';
+                const localUser = JSON.parse(localUserStr);
+
+                const userRes = await fetch('/api/user/' + localUser.username);
+                user = await userRes.json();
+                localStorage.setItem('user', JSON.stringify(user));
+
+                const catRes = await fetch('/api/catalog');
+                catalog = await catRes.json();
+
+                if(user.avatar) equipped = { ...equipped, ...user.avatar };
+                
+                const colors = ['#ffcc00', '#e0ac69', '#8d5524', '#f2f2f2', '#333333', '#ff0000', '#00ff00', '#0000ff'];
+                const cp = document.getElementById('skin-colors');
+                cp.innerHTML = '';
+                colors.forEach(c => {
+                    const d = document.createElement('div'); d.className='color-opt'; d.style.background=c;
+                    d.onclick = () => { equipped.color = c; updateAvatar(); save(); };
+                    cp.appendChild(d);
+                });
+
+                renderInventory();
+                updateAvatar();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderInventory() {
+            const list = document.getElementById('inventory-list');
+            list.innerHTML = '';
+            if(!user.inventory || user.inventory.length === 0) {
+                list.innerHTML = '<p style="grid-column: 1/-1; text-align:center;">Henüz hiç eşyan yok.</p>';
+                return;
+            }
+            user.inventory.forEach(id => {
+                const item = catalog.find(i => i.id === id);
+                if(!item) return;
+                const el = document.createElement('div');
+                el.className = `inv-item ${isEquipped(id) ? 'equipped' : ''}`;
+                el.innerHTML = `<img src="${item.image}"><p>${item.name}</p>`;
+                el.onclick = () => toggle(item);
+                list.appendChild(el);
+            });
+        }
+
+        function isEquipped(id) { 
+            return equipped.shirt === id || equipped.pants === id || equipped.hat === id || equipped.face === id; 
+        }
+
+        function toggle(item) {
+            if(isEquipped(item.id)) equipped[item.type] = null;
+            else equipped[item.type] = item.id;
+            updateAvatar(); renderInventory(); save();
+        }
+
+        function updateAvatar() {
+            const skin = new THREE.Color(equipped.color);
+            parts.head.material.color.set(skin);
+            parts.leftArm.material.color.set(skin);
+            parts.rightArm.material.color.set(skin);
+
+            parts.torso.material.color.set(equipped.shirt ? new THREE.Color(catalog.find(i => i.id === equipped.shirt).color) : 0x0000ff);
+            
+            const pCol = equipped.pants ? new THREE.Color(catalog.find(i => i.id === equipped.pants).color) : 0x00ff00;
+            parts.leftLeg.material.color.set(pCol);
+            parts.rightLeg.material.color.set(pCol);
+
+            if(hatMesh) { scene.remove(hatMesh); hatMesh = null; }
+            if(equipped.hat) {
+                const item = catalog.find(i => i.id === equipped.hat);
+                hatMesh = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.8, 2.5), new THREE.MeshPhongMaterial({color: item.color}));
+                hatMesh.position.y = 4.2; scene.add(hatMesh);
+            }
+
+            if(faceMesh) { parts.head.remove(faceMesh); faceMesh = null; }
+            if(equipped.face) {
+                const item = catalog.find(i => i.id === equipped.face);
+                const tex = new THREE.TextureLoader().load(item.image);
+                const faceGeo = new THREE.PlaneGeometry(1.8, 1.8);
+                const faceMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true });
+                faceMesh = new THREE.Mesh(faceGeo, faceMat);
+                faceMesh.position.z = 1.01;
+                parts.head.add(faceMesh);
+            }
+        }
+
+        function save() {
+            fetch('/api/update-avatar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username: user.username, avatarConfig: equipped })
+            });
+        }
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

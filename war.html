@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROGNIX - Baseplate Savaşı</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', cursive; user-select: none; -webkit-tap-highlight-color: transparent; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; pointer-events: none; border: 2px solid #0084c7; font-size: 12px; z-index: 50; }
+        #status { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 16px; font-weight: bold; text-shadow: 2px 2px black; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 5px; text-align: center; width: 60%; z-index: 50; }
+        #back-btn { position: absolute; top: 10px; right: 10px; padding: 10px 15px; background: #d9534f; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 100; }
+        
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; touch-action: none; z-index: 100; cursor: move; }
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; }
+        
+        #jump-btn { position: absolute; bottom: 40px; right: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border: 5px solid white; border-radius: 50%; color: white; font-weight: bold; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; box-shadow: 0 0 20px rgba(0,0,0,0.3); }
+        #jump-btn:active { background: rgba(255,255,255,0.5); transform: scale(0.9); }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h3 style="margin:0;">BASEPLATE SAVAŞI</h3>
+        <p>Hareket: WASD veya Joystick</p>
+        <p>Bakış: Sağ Tık Sürükle</p>
+    </div>
+    <div id="status">Siper al ve savaşı kazan!</div>
+    <button id="back-btn" onclick="location.href='index.html'">Geri Dön</button>
+    
+    <div id="joystick-container"><div id="joystick-knob"></div></div>
+    <div id="jump-btn" onmousedown="triggerJump()" ontouchstart="triggerJump()">ZIPLA</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user) location.href = 'index.html';
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x444444);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        const groundGeo = new THREE.PlaneGeometry(500, 500);
+        const groundMat = new THREE.MeshPhongMaterial({ color: 0x666666 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8);
+        sun.position.set(50, 100, 50);
+        sun.castShadow = true;
+        scene.add(sun);
+
+        // Siperler
+        const colliders = [];
+        for(let i=0; i<20; i++) {
+            const wall = new THREE.Mesh(new THREE.BoxGeometry(4, 6, 4), new THREE.MeshPhongMaterial({ color: 0x333333 }));
+            wall.position.set(Math.random()*100-50, 3, Math.random()*100-50);
+            wall.castShadow = true;
+            wall.receiveShadow = true;
+            scene.add(wall);
+            colliders.push(wall);
+        }
+
+        const noobTex = new THREE.TextureLoader().load('noob.png');
+        const playerGroup = new THREE.Group();
+        const playerMesh = new THREE.Mesh(new THREE.BoxGeometry(2, 2, 1), new THREE.MeshPhongMaterial({ map: noobTex, color: 0xffffff }));
+        playerMesh.castShadow = true;
+        playerMesh.position.y = 1;
+        playerGroup.add(playerMesh);
+        scene.add(playerGroup);
+
+        let vy = 0, isGrounded = true, cameraRotation = 0, cameraPitch = 0.5, keys = {};
+        let joystick = { x: 0, y: 0, active: false };
+
+        const knob = document.getElementById('joystick-knob');
+        const container = document.getElementById('joystick-container');
+        function handleJoystick(e) {
+            if (e.cancelable) e.preventDefault();
+            const input = (e.touches && e.touches[0]) || e;
+            const rect = container.getBoundingClientRect();
+            const dx = input.clientX - (rect.left + rect.width / 2);
+            const dy = input.clientY - (rect.top + rect.height / 2);
+            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45);
+            const angle = Math.atan2(dy, dx);
+            const lx = Math.cos(angle) * dist, ly = Math.sin(angle) * dist;
+            knob.style.transform = `translate(${lx}px, ${ly}px)`;
+            joystick.x = lx / 45; joystick.y = ly / 45;
+        }
+        container.addEventListener('mousedown', e => { if(e.button===0) { joystick.active=true; handleJoystick(e); } });
+        container.addEventListener('touchstart', e => { joystick.active=true; handleJoystick(e); });
+        window.addEventListener('mousemove', e => { if(joystick.active) handleJoystick(e); });
+        window.addEventListener('touchmove', e => { if(joystick.active) handleJoystick(e); }, {passive:false});
+        const stopJoystick = () => { joystick.active=false; joystick.x=0; joystick.y=0; knob.style.transform='translate(0,0)'; };
+        window.addEventListener('mouseup', stopJoystick); window.addEventListener('touchend', stopJoystick);
+
+        function triggerJump() { if(isGrounded) { vy = 0.4; isGrounded = false; } }
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.code==='Space') triggerJump(); });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        let isRightMouseDown = false;
+        window.addEventListener('mousedown', e => { if(e.button===2) isRightMouseDown=true; });
+        window.addEventListener('mouseup', e => { if(e.button===2) isRightMouseDown=false; });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+        window.addEventListener('mousemove', e => { if(isRightMouseDown) { cameraRotation -= e.movementX*0.01; cameraPitch = Math.max(0.1, Math.min(1.4, cameraPitch+e.movementY*0.01)); } });
+
+        function checkCollision(nextX, nextZ) {
+            const playerBox = new THREE.Box3().setFromCenterAndSize(
+                new THREE.Vector3(nextX, playerGroup.position.y + 1, nextZ),
+                new THREE.Vector3(1.8, 2, 0.8)
+            );
+            for (let collider of colliders) {
+                const colliderBox = new THREE.Box3().setFromObject(collider);
+                if (playerBox.intersectsBox(colliderBox)) return true;
+            }
+            return false;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let moveX = 0, moveZ = 0;
+            if(keys['w']) { moveX -= Math.sin(cameraRotation); moveZ -= Math.cos(cameraRotation); }
+            if(keys['s']) { moveX += Math.sin(cameraRotation); moveZ += Math.cos(cameraRotation); }
+            if(keys['a']) { moveX -= Math.cos(cameraRotation); moveZ += Math.sin(cameraRotation); }
+            if(keys['d']) { moveX += Math.cos(cameraRotation); moveZ -= Math.sin(cameraRotation); }
+            
+            if(joystick.active) {
+                const jx = joystick.x, jy = joystick.y;
+                moveX = jx * Math.cos(cameraRotation) + jy * Math.sin(cameraRotation);
+                moveZ = -jx * Math.sin(cameraRotation) + jy * Math.cos(cameraRotation);
+            }
+
+            if(moveX || moveZ) {
+                playerGroup.rotation.y = Math.atan2(moveX, moveZ);
+                const nextX = playerGroup.position.x + moveX * 0.3;
+                const nextZ = playerGroup.position.z + moveZ * 0.3;
+                
+                if (!checkCollision(nextX, playerGroup.position.z)) {
+                    playerGroup.position.x = nextX;
+                }
+                if (!checkCollision(playerGroup.position.x, nextZ)) {
+                    playerGroup.position.z = nextZ;
+                }
+            }
+
+            vy -= 0.015; playerGroup.position.y += vy;
+            if(playerGroup.position.y <= 0) { playerGroup.position.y=0; vy=0; isGrounded=true; }
+
+            camera.position.x = playerGroup.position.x + Math.sin(cameraRotation)*20*Math.cos(cameraPitch);
+            camera.position.z = playerGroup.position.z + Math.cos(cameraRotation)*20*Math.cos(cameraPitch);
+            camera.position.y = playerGroup.position.y + 20*Math.sin(cameraPitch) + 2;
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 1, playerGroup.position.z);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,426 @@
+/* Sidebar Rainbow Text */
+.sidebar-credit {
+    position: fixed;
+    left: 20px;
+    top: 70%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: left center;
+    font-weight: bold;
+    font-size: 20px;
+    white-space: nowrap;
+    z-index: 1000;
+    user-select: none;
+    background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8b00ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: rainbow_animation 4s linear infinite;
+    background-size: 400% 100%;
+}
+
+@keyframes rainbow_animation {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* Right Sidebar Ad */
+.right-banner-container {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    text-align: center;
+}
+
+.sponsor-title {
+    font-size: 14px;
+    font-weight: bold;
+    color: #00569a;
+    margin-bottom: 5px;
+    text-shadow: 1px 1px 0 #fff;
+}
+
+.right-banner {
+    display: block;
+    width: 160px;
+    border: 1px solid #ccc;
+    background: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+    margin-bottom: 15px;
+}
+
+.right-banner:hover {
+    transform: scale(1.05);
+}
+
+.right-banner img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Mobile hide sidebar ads/credits */
+@media (max-width: 1200px) {
+    .sidebar-credit { display: none; }
+    .right-banner-container { display: none; }
+}
+
+/* General Body Styles */
+body {
+    font-family: "Comic Sans MS", "Comic Sans", cursive;
+    margin: 0;
+    background-color: #f0f0f0;
+    color: #333;
+    line-height: 1.5;
+    display: flex;
+    justify-content: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#wrapper {
+    max-width: 970px;
+    width: 96%;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 12px 0;
+}
+
+/* Header */
+#header {
+    background: linear-gradient(to bottom, #0084c7 0%, #006093 100%);
+    color: #fff;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #004d74;
+    gap: 8px;
+}
+
+.header-left, .header-middle, .header-right {
+    display: flex;
+    align-items: center;
+}
+
+.ROGNIX-logo {
+    height: 35px;
+    width: auto;
+    margin-right: 8px;
+    display: block;
+}
+
+/* Make search compact and responsive */
+.search-input {
+    border: 1px solid #004d74;
+    border-radius: 20px;
+    padding: 7px 10px;
+    width: 180px;
+    font-size: 14px;
+    background-color: #fff;
+    color: #333;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+    transition: width 0.2s ease;
+}
+
+.search-input:focus {
+    width: 220px;
+    outline: none;
+}
+
+.search-button {
+    background: linear-gradient(to bottom, #86b92a 0%, #5e841f 100%);
+    border: 1px solid #4a6c17;
+    border-radius: 20px;
+    color: #fff;
+    padding: 7px 12px;
+    margin-left: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+/* Currency and header links */
+.currency-display {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.currency-icon {
+    height: 18px;
+    width: 18px;
+    margin-right: 5px;
+}
+
+.currency-value, .currency-label {
+    color: #fff;
+    margin-right: 6px;
+    font-size: 13px;
+}
+
+.robux-value, .robux-label {
+    color: #00A300;
+}
+
+.header-username, .header-link {
+    color: #fff;
+    font-weight: bold;
+    text-decoration: none;
+    font-size: 13px;
+    margin-left: 8px;
+}
+
+/* Main Navigation */
+#main-nav {
+    background-color: #e5e5e5;
+    border-bottom: 1px solid #ccc;
+}
+
+#main-nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+#main-nav li {
+    flex: 0 0 auto;
+}
+
+#main-nav li a {
+    display: block;
+    padding: 10px 14px;
+    text-decoration: none;
+    color: #555;
+    font-weight: bold;
+    border-right: 1px solid #dcdcdc;
+    font-size: 13px;
+}
+
+/* Content Area */
+#content {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 14px;
+    background-color: #f7f7f7;
+    gap: 12px;
+}
+
+#profile-left {
+    flex: 0 0 250px;
+    min-width: 180px;
+}
+
+#profile-right {
+    flex: 1 1 0;
+    min-width: 220px;
+}
+
+/* Blocks */
+.profile-block {
+    background-color: #fff;
+    border: 1px solid #d3d3d3;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 0;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+.profile-block h2, .profile-block h3 {
+    margin-top: 0;
+    color: #00569a;
+    font-size: 17px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+/* User Info */
+.user-info-block h2 {
+    font-size: 20px;
+    text-align: center;
+    border-bottom: none;
+}
+
+.profile-avatar {
+    display: block;
+    width: 130px;
+    height: 130px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin: 8px auto 12px auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    object-fit: cover;
+}
+
+.add-friend-button {
+    display: block;
+    width: 86%;
+    max-width: 220px;
+    margin: 0 auto 10px auto;
+    background: linear-gradient(to bottom, #5cb85c 0%, #4cae4c 100%);
+    border: 1px solid #398439;
+    border-radius: 6px;
+    color: #fff;
+    padding: 10px 12px;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+/* About */
+.about-block p {
+    font-size: 14px;
+    color: #444;
+}
+
+/* Friends */
+.friend-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.friend-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 13px;
+    color: #333;
+    text-align: center;
+}
+
+.friend-avatar {
+    width: 56px;
+    height: 56px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-bottom: 6px;
+}
+
+/* Games */
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.game-item {
+    background-color: #fcfcfc;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+}
+
+.game-icon {
+    width: 100%;
+    height: 90px;
+    object-fit: cover;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.game-item h4 {
+    margin: 6px 0;
+    color: #00569a;
+    font-size: 14px;
+}
+
+.game-item p {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 8px;
+    min-height: 34px;
+}
+
+/* Buttons */
+.play-button, .search-button, .add-friend-button {
+    touch-action: manipulation;
+}
+
+.play-button {
+    background: linear-gradient(to bottom, #86b92a 0%, #5e841f 100%);
+    border: 1px solid #4a6c17;
+    border-radius: 6px;
+    color: #fff;
+    padding: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Badges */
+.badge-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
+.badge-icon {
+    width: 58px;
+    height: 58px;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Footer */
+#footer {
+    background-color: #e5e5e5;
+    color: #666;
+    text-align: center;
+    padding: 12px;
+    font-size: 12px;
+    border-top: 1px solid #d3d3d3;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 600px) {
+    #header {
+        padding: 10px;
+        gap: 6px;
+    }
+    .search-input { display: none; }
+    .search-button { display: none; }
+    .header-right { gap: 6px; }
+    #profile-left {
+        flex: 0 0 140px;
+        order: 2;
+    }
+    #profile-right {
+        order: 1;
+    }
+    .profile-avatar {
+        width: 110px;
+        height: 110px;
+    }
+    .game-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    #main-nav ul {
+        gap: 6px;
+    }
+    .profile-block { padding: 10px; }
+    .add-friend-button { padding: 10px; font-size: 15px; }
+    #wrapper { width: 100%; border-radius: 0; margin: 0; }
+}
+
+/* Small tablets */
+@media (min-width: 601px) and (max-width: 880px) {
+    #profile-left { flex: 0 0 200px; }
+    .game-grid { grid-template-columns: repeat(2, 1fr); }
+    .search-input { width: 140px; }
+}

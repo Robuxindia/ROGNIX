@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROGNIX - Admin Paneli</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', cursive; user-select: none; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; border: 2px solid #ff0000; z-index: 50; }
+        #back-btn { position: absolute; top: 10px; right: 10px; padding: 10px 15px; background: #d9534f; color: white; border: none; border-radius: 5px; cursor: pointer; z-index: 100; }
+    </style>
+</head>
+<body>
+    <div id="ui"><h3>ADMİN PANELİ</h3><p>Dünyayı yönet!</p></div>
+    <button id="back-btn" onclick="location.href='games.html'">Geri Dön</button>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene(); scene.background = new THREE.Color(0x330000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer(); renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshPhongMaterial({ color: 0x110000 }));
+        ground.rotation.x = -Math.PI / 2; scene.add(ground);
+        camera.position.set(0, 10, 20); camera.lookAt(0, 0, 0);
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        animate();
+    </script>
+</body>
+</html>

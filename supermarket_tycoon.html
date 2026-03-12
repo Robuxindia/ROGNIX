@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROGNIX - Süpermarket Tycoon</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', cursive; user-select: none; -webkit-tap-highlight-color: transparent; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; border: 2px solid #0084c7; z-index: 50; }
+        #stats { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #00ff00; font-size: 22px; font-weight: bold; text-shadow: 2px 2px black; z-index: 50; background: rgba(0,0,0,0.5); padding: 10px 20px; border-radius: 15px; border: 2px solid #00ff00; }
+        #back-btn { position: absolute; top: 10px; right: 10px; padding: 10px 15px; background: #d9534f; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; z-index: 100; }
+        #joystick-container { position: absolute; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 100; }
+        #joystick-knob { position: absolute; top: 35px; left: 35px; width: 50px; height: 50px; background: rgba(255,255,255,0.5); border-radius: 50%; pointer-events: none; }
+        #jump-btn { position: absolute; bottom: 40px; right: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.2); border: 5px solid white; border-radius: 50%; color: white; font-weight: bold; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 100; }
+    </style>
+</head>
+<body>
+    <div id="ui"><h3>SÜPERMARKET TYCOON</h3><p>Rafları doldur ve satış yap!</p></div>
+    <div id="stats">Kasa: <span id="money-val">0</span> $</div>
+    <button id="back-btn" onclick="location.href='games.html'">Geri Dön</button>
+    
+    <div id="joystick-container"><div id="joystick-knob"></div></div>
+    <div id="jump-btn" onmousedown="triggerJump()" ontouchstart="triggerJump()">ZIPLA</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="avatar_loader.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xaaccff);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+        const light = new THREE.DirectionalLight(0xffffff, 0.5); light.position.set(10, 20, 10); scene.add(light);
+
+        // Zemin
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(300, 300), new THREE.MeshPhongMaterial({color: 0xeeeeee}));
+        ground.rotation.x = -Math.PI/2; scene.add(ground);
+
+        // Mağaza Duvarları (Camlı Modern Tasarım)
+        const wallMat = new THREE.MeshPhongMaterial({color: 0xffffff, transparent: true, opacity: 0.5});
+        const addWall = (w,h,d,x,z) => {
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), wallMat);
+            m.position.set(x, h/2, z); scene.add(m);
+        };
+        addWall(80, 20, 1, 0, 40); addWall(80, 20, 1, 0, -40); addWall(1, 20, 80, 40, 0); addWall(1, 20, 80, -40, 0);
+
+        // Üretim Bandı (Generator)
+        const gen = new THREE.Mesh(new THREE.BoxGeometry(10, 2, 10), new THREE.MeshPhongMaterial({color: 0x333333}));
+        gen.position.set(30, 1, -30); scene.add(gen);
+
+        const playerGroup = new THREE.Group();
+        scene.add(playerGroup);
+
+        let parts = {}, money = 0;
+        async function init() { parts = await loadPlayerAvatar(scene, playerGroup); }
+        init();
+
+        const items = [];
+        setInterval(() => {
+            const product = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.5, 1.5), new THREE.MeshPhongMaterial({color: 0xff0000}));
+            product.position.set(30, 5, -30);
+            scene.add(product);
+            items.push(product);
+        }, 1500);
+
+        let vy = 0, isGrounded = true, camRot = 0, camPitch = 0.5, keys = {}, animTime = 0;
+        let joystick = { x: 0, y: 0, active: false };
+
+        const knob = document.getElementById('joystick-knob'), container = document.getElementById('joystick-container');
+        function handleJoystick(e) {
+            if (e.cancelable) e.preventDefault();
+            const input = (e.touches && e.touches[0]) || e;
+            const rect = container.getBoundingClientRect();
+            const dx = input.clientX - (rect.left + rect.width / 2), dy = input.clientY - (rect.top + rect.height / 2);
+            const dist = Math.min(Math.sqrt(dx*dx + dy*dy), 45), angle = Math.atan2(dy, dx);
+            const lx = Math.cos(angle) * dist, ly = Math.sin(angle) * dist;
+            knob.style.transform = `translate(${lx}px, ${ly}px)`;
+            joystick.x = lx / 45; joystick.y = ly / 45;
+        }
+        container.addEventListener('mousedown', e => { if(e.button===0) { joystick.active=true; handleJoystick(e); } });
+        container.addEventListener('touchstart', e => { joystick.active=true; handleJoystick(e); });
+        window.addEventListener('mousemove', e => { if(joystick.active) handleJoystick(e); });
+        window.addEventListener('touchmove', e => { if(joystick.active) handleJoystick(e); }, {passive:false});
+        const stop = () => { joystick.active=false; joystick.x=0; joystick.y=0; knob.style.transform='translate(0,0)'; };
+        window.addEventListener('mouseup', stop); window.addEventListener('touchend', stop);
+
+        function triggerJump() { if(isGrounded) { vy = 0.5; isGrounded = false; } }
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.code==='Space') triggerJump(); });
+        window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+        let isRM = false; window.addEventListener('mousedown', e => { if(e.button===2) isRM=true; }); window.addEventListener('mouseup', e => { if(e.button===2) isRM=false; });
+        window.addEventListener('contextmenu', e => e.preventDefault());
+        window.addEventListener('mousemove', e => { if(isRM) { camRot -= e.movementX*0.01; camPitch = Math.max(0.1, Math.min(1.4, camPitch+e.movementY*0.01)); } });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let mx = 0, mz = 0;
+            if(keys['w']) { mx -= Math.sin(camRot); mz -= Math.cos(camRot); }
+            if(keys['s']) { mx += Math.sin(camRot); mz += Math.cos(camRot); }
+            if(keys['a']) { mx -= Math.cos(camRot); mz += Math.sin(camRot); }
+            if(keys['d']) { mx += Math.cos(camRot); mz -= Math.sin(camRot); }
+            if(joystick.active) {
+                mx = joystick.x * Math.cos(camRot) + joystick.y * Math.sin(camRot);
+                mz = -joystick.x * Math.sin(camRot) + joystick.y * Math.cos(camRot);
+            }
+
+            const isMoving = (mx !== 0 || mz !== 0);
+            if(isMoving) {
+                playerGroup.rotation.y = Math.atan2(mx, mz);
+                playerGroup.position.x += mx * 0.45; playerGroup.position.z += mz * 0.45;
+                animTime += 0.2;
+            }
+
+            vy -= 0.02; playerGroup.position.y += vy;
+            if(playerGroup.position.y <= 0) { playerGroup.position.y=0; vy=0; isGrounded=true; }
+
+            // Ürün Toplama
+            items.forEach((p, i) => {
+                p.position.y -= 0.1; if(p.position.y < 1) p.position.y = 1;
+                if(playerGroup.position.distanceTo(p.position) < 5) {
+                    scene.remove(p); items.splice(i, 1);
+                    money += 25; document.getElementById('money-val').innerText = money;
+                }
+            });
+
+            if(parts.leftLeg) {
+                if(!isGrounded) { parts.leftLeg.rotation.x = -0.5; parts.rightLeg.rotation.x = -0.5; }
+                else if(isMoving) { parts.leftLeg.rotation.x = Math.sin(animTime)*0.8; parts.rightLeg.rotation.x = -Math.sin(animTime)*0.8; }
+                else { parts.leftLeg.rotation.x = 0; parts.rightLeg.rotation.x = 0; }
+            }
+
+            camera.position.x = playerGroup.position.x + Math.sin(camRot)*30*Math.cos(camPitch);
+            camera.position.z = playerGroup.position.z + Math.cos(camRot)*30*Math.cos(camPitch);
+            camera.position.y = playerGroup.position.y + 30*Math.sin(camPitch) + 10;
+            camera.lookAt(playerGroup.position.x, playerGroup.position.y + 6, playerGroup.position.z);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>

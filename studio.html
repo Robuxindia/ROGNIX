@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ROGNIX Studio (Beta)</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: sans-serif; display: flex; }
+        #sidebar { width: 250px; height: 100vh; background: #333; color: white; padding: 15px; box-sizing: border-box; z-index: 100; }
+        #canvas-container { flex: 1; height: 100vh; position: relative; }
+        .btn { background: #0084c7; color: white; border: none; padding: 10px; width: 100%; margin-bottom: 10px; cursor: pointer; border-radius: 4px; }
+        .btn:hover { background: #006093; }
+        .prop-group { margin-bottom: 15px; border-top: 1px solid #555; padding-top: 10px; }
+        input[type="number"] { width: 50px; background: #444; color: white; border: 1px solid #666; padding: 3px; }
+        #save-status { font-size: 12px; color: #aaa; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h2>ROGNIX Studio</h2>
+        <p style="font-size:12px;">Blokları seçmek için üzerine tıkla.</p>
+        
+        <button class="btn" onclick="addPart()">+ Blok Ekle</button>
+        <button class="btn" onclick="setSpawn()" style="background:#5cb85c;">Spawn Belirle</button>
+        
+        <div id="properties" class="prop-group" style="display:none;">
+            <h4>Özellikler</h4>
+            Boyut X: <input type="number" id="sx" step="0.5" oninput="updateSelected()"><br>
+            Boyut Y: <input type="number" id="sy" step="0.5" oninput="updateSelected()"><br>
+            Boyut Z: <input type="number" id="sz" step="0.5" oninput="updateSelected()"><br>
+            <br>
+            Renk: <input type="color" id="pcol" oninput="updateSelected()"><br>
+            <button class="btn" onclick="deleteSelected()" style="background:#d9534f; margin-top:10px;">Sil</button>
+        </div>
+        
+        <div class="prop-group">
+            <button class="btn" onclick="saveGame()" style="background:#ffcc00; color:black; font-weight:bold;">OYUNU YAYINLA</button>
+            <div id="save-status"></div>
+        </div>
+        <button class="btn" onclick="location.href='develop.html'" style="background:#666;">Çıkış</button>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        const camera = new THREE.PerspectiveCamera(75, (window.innerWidth-250)/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth - 250, window.innerHeight);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const grid = new THREE.GridHelper(100, 100);
+        scene.add(grid);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const sun = new THREE.DirectionalLight(0xffffff, 0.8); sun.position.set(50, 100, 50); scene.add(sun);
+
+        let objects = [];
+        let selected = null;
+        let spawnPoint = { x: 0, y: 5, z: 0 };
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        function addPart() {
+            const geo = new THREE.BoxGeometry(4, 4, 4);
+            const mat = new THREE.MeshPhongMaterial({ color: 0xcccccc });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.y = 2;
+            scene.add(mesh);
+            objects.push(mesh);
+            select(mesh);
+        }
+
+        function select(obj) {
+            if(selected) selected.material.emissive.setHex(0x000000);
+            selected = obj;
+            if(selected) {
+                selected.material.emissive.setHex(0x333333);
+                document.getElementById('properties').style.display = 'block';
+                document.getElementById('sx').value = selected.scale.x * 4;
+                document.getElementById('sy').value = selected.scale.y * 4;
+                document.getElementById('sz').value = selected.scale.z * 4;
+                document.getElementById('pcol').value = "#" + selected.material.color.getHexString();
+            } else {
+                document.getElementById('properties').style.display = 'none';
+            }
+        }
+
+        function updateSelected() {
+            if(!selected) return;
+            selected.scale.set(
+                document.getElementById('sx').value / 4,
+                document.getElementById('sy').value / 4,
+                document.getElementById('sz').value / 4
+            );
+            selected.material.color.set(document.getElementById('pcol').value);
+        }
+
+        function deleteSelected() {
+            if(!selected) return;
+            scene.remove(selected);
+            objects = objects.filter(o => o !== selected);
+            select(null);
+        }
+
+        function setSpawn() {
+            alert("Kameranın şu anki bakış açısı spawn noktası olarak kaydedildi!");
+            spawnPoint = { x: camera.position.x, y: camera.position.y, z: camera.position.z };
+        }
+
+        window.addEventListener('mousedown', (e) => {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(objects);
+            if(intersects.length > 0) select(intersects[0].object);
+        });
+
+        camera.position.set(20, 20, 20);
+        camera.lookAt(0, 0, 0);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        async function saveGame() {
+            const name = prompt("Oyunun Adı:");
+            if(!name) return;
+            
+            const data = {
+                name: name,
+                spawn: spawnPoint,
+                parts: objects.map(o => ({
+                    pos: o.position,
+                    scale: o.scale,
+                    color: "#" + o.material.color.getHexString()
+                }))
+            };
+            
+            document.getElementById('save-status').innerText = "Yayınlanıyor...";
+            const res = await fetch('/api/publish-game', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    username: JSON.parse(localStorage.getItem('user')).username,
+                    gameData: data 
+                })
+            });
+            const result = await res.json();
+            if(result.success) {
+                alert("Oyunun başarıyla yayınlandı! Admin onayı bekleniyor.");
+                location.href = 'develop.html';
+            }
+        }
+    </script>
+</body>
+</html>

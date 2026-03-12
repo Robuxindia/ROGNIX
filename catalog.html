@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROGNIX - Mağaza</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/x-icon" href="roblox_favicon.png">
+    <style>
+        .expensive-item { border: 3px solid #ffcc00 !important; box-shadow: 0 0 10px rgba(255, 204, 0, 0.5); }
+        .item-price { font-weight: bold; color: #00A300; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <div class="sidebar-credit">2013erikcassel.netlify.app V2 by Mavi Kedi</div>
+    <div id="wrapper">
+        <header id="header">
+            <div class="header-left">
+                <a href="index.html" class="logo-link"><img src="Rognix.png" alt="ROGNIX" class="ROGNIX-logo"></a>
+            </div>
+            <div class="header-right" id="auth-section"></div>
+        </header>
+
+        <nav id="main-nav">
+            <ul>
+                <li><a href="index.html">Anasayfa</a></li>
+                <li><a href="profile.html">Profil</a></li>
+                <li><a href="games.html">Oyunlarım</a></li>
+                <li><a href="community_games.html">Topluluk Oyunları</a></li>
+                <li><a href="avatar.html">Avatar'ım</a></li>
+                <li><a href="catalog.html" class="active">Mağaza</a></li>
+                <li><a href="trade.html">Takas</a></li>
+                <li><a href="develop.html">Geliştir</a></li>
+            </ul>
+        </nav>
+
+        <div id="content">
+            <div class="profile-block" style="width:100%;">
+                <h2>Katalog</h2>
+                <div id="catalog-grid" class="game-grid">Yükleniyor...</div>
+            </div>
+        </div>
+
+        <footer id="footer">
+            <p>&copy; 2013 ROGNIX Corporation.</p>
+        </footer>
+    </div>
+    
+    <div class="right-banner-container">
+        <div class="sponsor-title">Sponsorlarımız</div>
+        <a href="https://duzcesigorta.net" target="_blank" class="right-banner"><img src="duzce-sigorta.png"></a>
+        <a href="https://sigortaduzce.com" target="_blank" class="right-banner"><img src="sigortaduzce.png"></a>
+    </div>
+
+    <script src="auth.js"></script>
+    <script>
+        async function loadCatalog() {
+            try {
+                const res = await fetch('api/catalog');
+                if (!res.ok) throw new Error("Katalog verisi sunucudan alınamadı.");
+                const items = await res.json();
+                
+                const grid = document.getElementById('catalog-grid');
+                const localUserStr = localStorage.getItem('user');
+                const user = localUserStr ? JSON.parse(localUserStr) : null;
+                
+                grid.innerHTML = '';
+
+                if (items.length === 0) {
+                    grid.innerHTML = '<p>Mağazada henüz eşya yok.</p>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    const isExpensive = item.price > 100;
+                    const ownsItem = user && user.inventory && user.inventory.includes(item.id);
+                    
+                    const el = document.createElement('div');
+                    el.className = `game-item ${isExpensive ? 'expensive-item' : ''}`;
+                    el.innerHTML = `
+                        <img src="${item.image}" class="game-icon">
+                        <h4>${item.name}</h4>
+                        <p class="item-price">${item.price} Robux</p>
+                        <button class="play-button" onclick="buyItem('${item.id}')" ${ownsItem ? 'disabled' : ''}>
+                            ${ownsItem ? 'Sahipsin' : 'Satın Al'}
+                        </button>
+                    `;
+                    grid.appendChild(el);
+                });
+            } catch (err) {
+                console.error("Katalog Hatası:", err);
+                document.getElementById('catalog-grid').innerHTML = '<p style="color:red;">Hata: ' + err.message + '</p>';
+            }
+        }
+
+        async function buyItem(itemId) {
+            const user = JSON.parse(localStorage.getItem('user'));
+            if (!user) return alert("Önce giriş yapmalısın!");
+
+            try {
+                const res = await fetch('api/buy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ username: user.username, itemId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert("Başarıyla satın alındı!");
+                    user.robux = data.robux;
+                    user.inventory = data.inventory;
+                    localStorage.setItem('user', JSON.stringify(user));
+                    if (window.updateUI) updateUI();
+                    loadCatalog();
+                } else {
+                    alert(data.message || "Satın alma başarısız.");
+                }
+            } catch (err) {
+                alert("Sunucu hatası oluştu.");
+            }
+        }
+        window.addEventListener('load', loadCatalog);
+    </script>
+</body>
+</html>
